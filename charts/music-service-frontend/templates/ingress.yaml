@@ -1,0 +1,46 @@
+{{- if and (.Values.jxRequirements.ingress.domain) (not .Values.knativeDeploy) }}
+apiVersion: {{ .Values.jxRequirements.ingress.apiVersion }}
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+{{- if .Values.ingress.annotations }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+{{- end }}
+{{- if .Values.jxRequirements.ingress.annotations }}
+{{ toYaml .Values.jxRequirements.ingress.annotations | indent 4 }}
+{{- end }}
+  name: {{ .Values.service.name }}
+spec:
+  rules:
+{{- if .Values.global }}
+{{- if .Values.global.jxNsJxProduction }}
+  - host: {{ .Values.service.name }}.jenkins-x1.iviet.com
+{{- else }}
+{{- if .Values.global.jxNsJxStaging }}
+  - host: {{ .Values.service.name }}-staging.jenkins-x1.iviet.com
+{{- else }}
+  - host: {{ .Values.service.name }}-dev.jenkins-x1.iviet.com
+{{- end }}
+{{- end }}
+{{- end }}
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Values.service.name }}
+          servicePort: 80
+{{- if .Values.jxRequirements.ingress.tls.enabled }}
+  tls:
+  - hosts:
+{{- if .Values.global.jxNsJxProduction }}
+    - {{ .Values.service.name }}.jenkins-x1.iviet.com
+{{- else }}
+{{- if .Values.global.jxNsJxStaging }}
+    - {{ .Values.service.name }}-staging.jenkins-x1.iviet.com
+{{- else }}
+    - {{ .Values.service.name }}-dev.jenkins-x1.iviet.com
+{{- end }}
+{{- end }}
+    secretName: "tls-{{ .Values.jxRequirements.ingress.domain | replace "." "-" }}"
+{{- end }}
+{{- end }}
